@@ -1,13 +1,11 @@
-// gocovmerge takes the results from multiple `go test -coverprofile` runs and
-// merges them into one profile
-package main
+package profile
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"golang.org/x/tools/cover"
@@ -92,20 +90,45 @@ func dumpProfiles(profiles []*cover.Profile, out io.Writer) {
 	}
 }
 
-func main() {
-	flag.Parse()
+type Profile struct {
+	profiles []*cover.Profile
+}
 
-	var merged []*cover.Profile
-
-	for _, file := range flag.Args() {
-		profiles, err := cover.ParseProfiles(file)
-		if err != nil {
-			log.Fatalf("failed to parse profiles: %v", err)
-		}
-		for _, p := range profiles {
-			merged = addProfile(merged, p)
-		}
+func NewProfile(file string) (*Profile, error) {
+	res, err := cover.ParseProfiles(file)
+	if err != nil {
+		fmt.Printf("failed to parse profiles: %v\n", err)
+		return nil, err
 	}
+	return &Profile{res}, nil
+}
 
-	dumpProfiles(merged, os.Stdout)
+func NewEmptyProfile() *Profile {
+	return &Profile{}
+}
+
+func (p *Profile) Merge(merge *Profile) {
+	if merge == nil || merge.profiles == nil {
+		return
+	}
+	for _, sub := range merge.profiles {
+		p.profiles = addProfile(p.profiles, sub)
+	}
+}
+
+func (p *Profile) Dump() {
+	dumpProfiles(p.profiles, os.Stdout)
+}
+
+func (p *Profile) Write(file string) error {
+	os.MkdirAll(filepath.Dir(file), os.ModePerm)
+	f, err := os.Create(file)
+	if err != nil {
+		fmt.Printf("failed to write profiles: %v\n", err)
+		return err
+	}
+	defer f.Close()
+
+	dumpProfiles(p.profiles, f)
+	return nil
 }

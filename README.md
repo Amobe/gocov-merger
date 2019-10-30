@@ -1,16 +1,41 @@
-gocovmerge
-==========
+# gocov-merger
+`gocov-merger` merges many golang coverprofiles into one coverprofile.
 
-gocovmerge takes the results from multiple `go test -coverprofile` runs and
-merges them into one profile.
+## Installation
+```
+go get github.com/amobe/gocov-merger
+```
 
-usage
------
+## Usage
+From the command line, `gocov-merger` can merge many coverprofiles. By default, it prints the merge result to `stdout`.
+```
+gocov-merger [options] PATH ...
+```
+The result can be use for gocov, gocov-xml, and gocov-html
 
-    gocovmerge [coverprofiles...]
+### Available options
+```
+  -q         quite mode
+  -o file    specific output file
+  -h         help page
+```
 
-gocovmerge takes the source coverprofiles as the arguments (output from
-`go test -coverprofile coverage.out`) and outputs a merged version of the
-files to standard out. You can only merge profiles that were generated from the
-same source code. If there are source lines that overlap or do not merge, the
-process will exit with an error code.
+## Example
+```
+cd project_a && go test -coverprofile=cover.out ./...
+cd project_b && go test -coverprofile=cover.out ./...
+
+gocov-merger -o merged.out project_a/cover.out project_b/cover.out ...
+> Merged 2 reports to merged.out
+```
+
+## Related tools and services
+
+[gocov](https://github.com/axw/gocov):
+Coverage reporting tool for The Go Programming Language.
+
+[gocov-html](https://github.com/matm/gocov-html):
+A simple helper tool for generating HTML output from gocov.
+
+[gocov-xml](https://github.com/AlekSi/gocov-xml):
+A simple helper tool for generating XML output in Cobertura format for CIs like Jenkins and others from gocov.
